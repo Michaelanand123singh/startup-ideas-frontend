@@ -24,11 +24,16 @@ const IdeaList: React.FC<IdeaListProps> = ({ filter, sortBy = 'newest' }) => {
           fetchedIdeas = fetchedIdeas.filter(idea => idea.category === filter);
         }
         
-        // Sort ideas
+        // Sort ideas based on the votes structure
         if (sortBy === 'newest') {
           fetchedIdeas.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
         } else if (sortBy === 'popular') {
-          fetchedIdeas.sort((a, b) => b.votes - a.votes);
+          fetchedIdeas.sort((a, b) => {
+            // Calculate net votes for each idea
+            const votesA = typeof a.votes === 'object' ? a.votes.upvotes - a.votes.downvotes : a.votes;
+            const votesB = typeof b.votes === 'object' ? b.votes.upvotes - b.votes.downvotes : b.votes;
+            return votesB - votesA;
+          });
         }
         
         setIdeas(fetchedIdeas);
@@ -45,17 +50,23 @@ const IdeaList: React.FC<IdeaListProps> = ({ filter, sortBy = 'newest' }) => {
 
   const handleVote = async (id: string, increment: boolean) => {
     try {
-      await api.voteIdea(id, increment);
-      // Update the idea in the list
+      const updatedIdea = await api.voteIdea(id, increment);
+      
+      // Update the idea in the list with the response from the server
       setIdeas(prevIdeas => 
-        prevIdeas.map(idea => 
-          idea.id === id 
-            ? { ...idea, votes: idea.votes + (increment ? 1 : -1) } 
-            : idea
-        )
+        prevIdeas.map(idea => {
+          if (idea.id === id) {
+            return updatedIdea;
+          }
+          return idea;
+        })
       );
     } catch (err) {
       console.error('Failed to vote', err);
+      // Show an error message to the user
+      setError('Failed to register your vote. Please try again.');
+      // Clear the error after 3 seconds
+      setTimeout(() => setError(null), 3000);
     }
   };
 

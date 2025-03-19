@@ -44,9 +44,9 @@ const IdeaCard: React.FC<IdeaCardProps> = ({ idea, onVote }) => {
               to={`/idea/${idea.id}`} 
               className="text-blue-600 hover:text-blue-800 font-medium"
             >
-              {idea.commentsCount === 0 
+              {idea.commentCount === 0 
                 ? 'Be the first to comment' 
-                : `${idea.commentsCount} comment${idea.commentsCount === 1 ? '' : 's'}`}
+                : `${idea.commentCount} comment${idea.commentCount === 1 ? '' : 's'}`}
             </Link>
           </div>
         </div>

@@ -1,92 +1,61 @@
 import axios from 'axios';
 import { Idea, Comment } from '../types';
 
-// In a real app, this would be an environment variable
-const API_BASE_URL = 'https://api.startupideas.com';
+// Using the hosted backend URL
+const API_BASE_URL = 'https://startup-ideas-backend.onrender.com';
 
-// Since we're building a frontend prototype without a real backend yet,
-// we'll simulate API calls with localStorage
+// Creating an axios instance with the base URL
+const axiosInstance = axios.create({
+  baseURL: API_BASE_URL,
+  headers: {
+    'Content-Type': 'application/json',
+    'x-client-id': localStorage.getItem('clientId') || `client-${Date.now()}`
+  }
+});
+
+// Set a clientId if one doesn't exist
+if (!localStorage.getItem('clientId')) {
+  const clientId = `client-${Date.now()}`;
+  localStorage.setItem('clientId', clientId);
+}
+
 const api = {
   // Ideas
   getIdeas: async (): Promise<Idea[]> => {
-    // Simulated API call
-    const ideas = localStorage.getItem('ideas');
-    return ideas ? JSON.parse(ideas) : [];
+    const response = await axiosInstance.get('/api/ideas');
+    return response.data.ideas || [];
   },
   
   getIdeaById: async (id: string): Promise<Idea | null> => {
-    const ideas = await api.getIdeas();
-    return ideas.find(idea => idea.id === id) || null;
+    const response = await axiosInstance.get(`/api/ideas/${id}`);
+    return response.data;
   },
   
   createIdea: async (idea: Omit<Idea, 'id' | 'createdAt' | 'votes' | 'commentsCount'>): Promise<Idea> => {
-    const ideas = await api.getIdeas();
-    
-    const newIdea: Idea = {
-      ...idea,
-      id: Date.now().toString(),
-      createdAt: new Date().toISOString(),
-      votes: 0,
-      commentsCount: 0
-    };
-    
-    const updatedIdeas = [...ideas, newIdea];
-    localStorage.setItem('ideas', JSON.stringify(updatedIdeas));
-    
-    return newIdea;
+    const response = await axiosInstance.post('/api/ideas', idea);
+    return response.data;
   },
   
   voteIdea: async (id: string, increment: boolean): Promise<Idea> => {
-    const ideas = await api.getIdeas();
-    const updatedIdeas = ideas.map(idea => {
-      if (idea.id === id) {
-        return {
-          ...idea,
-          votes: idea.votes + (increment ? 1 : -1)
-        };
-      }
-      return idea;
+    // Your backend expects 'type' to be 'upvote' or 'downvote'
+    const type = increment ? 'upvote' : 'downvote';
+    const response = await axiosInstance.post(`/api/votes/idea/${id}`, { 
+      type 
     });
-    
-    localStorage.setItem('ideas', JSON.stringify(updatedIdeas));
-    const updatedIdea = updatedIdeas.find(idea => idea.id === id)!;
-    return updatedIdea;
+    return response.data;
   },
   
   // Comments
   getComments: async (ideaId: string): Promise<Comment[]> => {
-    const comments = localStorage.getItem(`comments_${ideaId}`);
-    return comments ? JSON.parse(comments) : [];
+    const response = await axiosInstance.get(`/api/comments/idea/${ideaId}`);
+    return response.data;
   },
   
   createComment: async (ideaId: string, text: string): Promise<Comment> => {
-    const comments = await api.getComments(ideaId);
-    
-    const newComment: Comment = {
-      id: Date.now().toString(),
-      ideaId,
-      text,
-      createdAt: new Date().toISOString()
-    };
-    
-    const updatedComments = [...comments, newComment];
-    localStorage.setItem(`comments_${ideaId}`, JSON.stringify(updatedComments));
-    
-    // Update comment count
-    const ideas = await api.getIdeas();
-    const updatedIdeas = ideas.map(idea => {
-      if (idea.id === ideaId) {
-        return {
-          ...idea,
-          commentsCount: idea.commentsCount + 1
-        };
-      }
-      return idea;
+    const response = await axiosInstance.post(`/api/comments/idea/${ideaId}`, { 
+      content: text 
     });
-    
-    localStorage.setItem('ideas', JSON.stringify(updatedIdeas));
-    
-    return newComment;
+    return response.data;
   }
 };
 
