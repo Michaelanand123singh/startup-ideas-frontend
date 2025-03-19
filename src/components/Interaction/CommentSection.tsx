@@ -59,7 +59,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({ ideaId }) => {
         <div className="space-y-4">
           {comments.map(comment => (
             <div key={comment.id} className="border-b border-gray-200 pb-4 last:border-b-0">
-              <p className="text-gray-800 mb-2">{comment.text}</p>
+              <p className="text-gray-800 mb-2">{comment.content}</p>
               <p className="text-sm text-gray-500">{formatDate(comment.createdAt)}</p>
             </div>
           ))}

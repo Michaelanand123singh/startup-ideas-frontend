@@ -29,7 +29,8 @@ const SubmissionForm = () => {
       await api.createIdea({
         title,
         description,
-        category
+        category,
+        commentCount: 0 // Add the missing commentCount field
       });
       
       // Redirect to home page after successful submission
