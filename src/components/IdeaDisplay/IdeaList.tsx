@@ -6,9 +6,10 @@ import api from '../../services/api';
 interface IdeaListProps {
   filter?: string;
   sortBy?: 'newest' | 'popular';
+  searchQuery?: string;
 }
 
-const IdeaList: React.FC<IdeaListProps> = ({ filter, sortBy = 'newest' }) => {
+const IdeaList: React.FC<IdeaListProps> = ({ filter, sortBy = 'newest', searchQuery = '' }) => {
   const [ideas, setIdeas] = useState<Idea[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -22,6 +23,15 @@ const IdeaList: React.FC<IdeaListProps> = ({ filter, sortBy = 'newest' }) => {
         // Filter by category if filter is provided
         if (filter) {
           fetchedIdeas = fetchedIdeas.filter(idea => idea.category === filter);
+        }
+        
+        // Filter by search query if provided
+        if (searchQuery) {
+          const query = searchQuery.toLowerCase();
+          fetchedIdeas = fetchedIdeas.filter(idea => 
+            idea.title.toLowerCase().includes(query) || 
+            idea.description.toLowerCase().includes(query)
+          );
         }
         
         // Sort ideas based on the votes structure
@@ -46,7 +56,7 @@ const IdeaList: React.FC<IdeaListProps> = ({ filter, sortBy = 'newest' }) => {
     };
 
     fetchIdeas();
-  }, [filter, sortBy]);
+  }, [filter, sortBy, searchQuery]);
 
   const handleVote = async (id: string, increment: boolean) => {
     try {
@@ -90,9 +100,11 @@ const IdeaList: React.FC<IdeaListProps> = ({ filter, sortBy = 'newest' }) => {
     return (
       <div className="text-center py-12">
         <p className="text-gray-500 text-lg">
-          {filter 
-            ? `No ideas found in the ${filter} category.` 
-            : 'No ideas yet. Be the first to share yours!'}
+          {searchQuery 
+            ? `No ideas found matching "${searchQuery}"${filter ? ` in the ${filter} category` : ''}.`
+            : filter 
+              ? `No ideas found in the ${filter} category.` 
+              : 'No ideas yet. Be the first to share yours!'}
         </p>
       </div>
     );
